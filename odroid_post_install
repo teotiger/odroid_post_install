@@ -1,0 +1,217 @@
+#!/bin/bash
+##
+## Usage: odroid_post_install [options]
+##
+## Configure fresh Odroid N2 and improve standard installation.
+## Must be run as root.
+##
+## Options:
+##  -h, --help      Display this message.
+##  -v, --version   Display version number.
+##
+## Example:
+## odroid_post_install --help
+##
+
+#-------------------#
+# GLOBAL VARIABLES  #
+#-------------------#
+VMAJ=1  # major version
+VMIN=0  # minor version
+VREV=0  # patch version
+
+QTM=0   # quiet mode flag (always off)
+#------------------#
+# GLOBAL FUNCTIONS #
+#------------------#
+_config(){
+  source "$1"
+}
+_echo(){
+  if [ $QTM -eq 0 ]; then
+    echo "$1"
+  fi
+}
+_error(){
+  echo "$1"
+  exit 1
+}
+_replace(){
+  if [ "$#" -eq 3 ]; then
+    if [ -f "$1" ]; then
+      sed -i 's/'"${2////\\/}"'/'"${3////\\/}"'/g' "$1"
+    else
+      _error "'$1' is not a valid file."
+    fi
+  else
+    _error "Function needs 3 parameter (file, search, replace)."
+  fi
+}
+_require(){
+  if ! [ -n "$(command -v $1)" ]; then
+    _error "The program $1 is required. Please install it first."
+  fi
+}
+_root(){
+  if [[ $(whoami) != "root" ]]; then
+    _error "This program must be run as root."
+  fi
+}
+_title(){
+  if [ $QTM -eq 0 ]; then
+    (echo; echo \*\*\* $1 \*\*\*; echo)
+  fi
+}
+_usage(){
+  [ "$*" ] && echo "$0: $*"
+  sed -n '/^##/,/^$/s/^## \{0,1\}//p' "$0"
+  exit 2
+}
+_version(){
+  echo "" && echo "$0 version $VMAJ.$VMIN.$VREV"
+  echo "Web: http://github.com/teotiger/juno_post_install" && echo ""
+  exit 2
+}
+_write(){
+  fname="out.txt"
+  if [ ! -z "$2" ]; then
+    fname="$2"
+  fi
+
+  cat <<EOF > "$fname"
+$1
+EOF
+  chown $SUDO_UID:$SUDO_GID "$fname"
+  _echo "File '$fname' created"
+}
+#--------------------#
+# PROGRAMM FUNCTIONS #
+#--------------------#
+full_update(){
+  _title "Prepare system"
+  apt update && apt upgrade -y && apt autoremove -y && apt autoclean -y
+}
+remove_software(){
+  _title "Remove software"
+  apt purge libreoffice* thunderbird* virtualbox* simple-scan* pidgin xfburn -y
+  apt autoclean -y
+  apt autoremove -y
+}
+add_software_apm(){
+  _title "Install Apache Webserver with PHP and MySQL Database"
+  apt install rar unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
+  MYSUSER=`grep -m1 user /etc/mysql/debian.cnf | awk '{ print $3 }'`
+  MYSPASS=`grep -m1 password /etc/mysql/debian.cnf | awk '{ print $3 }'`
+  _echo "MySQL 'root' user is => "$MYSUSER
+  _echo "MySQL 'root' pass is => "$MYSPASS
+}
+add_software_amp(){
+  _title "Install Ampache Music Streaming Server"
+  cd /var/www/html
+  wget https://github.com/ampache/ampache/releases/download/3.9.0/ampache-3.9.0_all.zip
+  unzip ampache-3.9.0_all.zip -d ampache
+  sudo chown -R www-data:www-data /var/www/html/ampache
+  sudo chmod -R 777 /var/www/html/ampache/config
+  _echo "...increase max. upload filesize in php to 22MB"
+  _replace "/etc/php/7.2/apache2/php.ini" "upload_max_filesize = 2M" "upload_max_filesize = 22M"
+  _replace "/etc/php/7.2/apache2/php.ini" "post_max_size = 8M" "post_max_size = 22M"
+  _echo "Configure your Ampache via Web Gui => http://localhost/ampache"
+}
+add_software_dlna(){
+  _title "Install DLNA Media Server"
+  apt install minidlna
+  _echo "Configure your media files in => /etc/minidlna.conf"
+  _echo "Start/Stop your DLNA server with => service minidlna start|stop"
+  _echo "Be careful with the image cache located in => /var/cache/minidlna/" 
+}
+add_software_nextcloud(){
+  _title "Install Nextcloud"
+  apt install php-zip php-mbstring
+  NEXTDIR=/var/www/html/nextcloud
+  mkdir $NEXTDIR
+  cd $NEXTDIR
+  wget https://download.nextcloud.com/server/installer/setup-nextcloud.php
+  sudo chown -R www-data:www-data $NEXTDIR
+  _echo "Configure your Nextcloud via Web Gui => http://localhost/nextcloud/setup-nextcloud.php"
+}
+
+# add_software4(){
+#   _title "Install Samba Server => READ https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services"
+#   apt install samba-common samba tdb-tools
+#   SMBUSER=foo
+#   SMBPASS=bar
+#   echo -ne "$SMBPASS\n$SMBPASS\n" | smbpasswd -a -s $SMBUSER
+#   _echo "Samba user foo created => use bar as pass"
+# 
+#   SMBSHAREDIR=/opt/odroidshare
+#   mkdir $USERSHAREDIR
+#   chmod 777 $USERSHAREDIR
+#   net usershare add OdroidShare $USERSHAREDIR "Shared Folder on Odroid N2" user:$SMBUSER
+# 
+#   _echo "Configure your folders => /etc/samba/smb.conf"
+#   _echo "Start/Stop your dlna server with => service smbd start|stop" 
+# }
+configure_vm(){
+  _title "Configure virtual machine (if any)"
+
+  vbox=`dmidecode -t system | grep -i 'virtualbox' | wc -l`
+  if [ $vbox -gt 0 ]; then
+    _echo "Install software and..."
+    apt install virtualbox-guest-additions-iso virtualbox-guest-utils
+    _echo "...add user to group"
+    if [ $SUDO_USER == "" ]; then
+      adduser $USER vboxsf
+    else
+      adduser $SUDO_USER vboxsf
+    fi
+  fi
+}
+create_aliases(){
+  _title "Create command aliases"
+
+  txt="
+alias clear-history='cat /dev/null > ~/.bash_history && history -c'
+alias apt-opt='sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y && sudo apt autoclean -y'"
+
+  echo "$txt" >> "/home/$SUDO_USER/.bashrc"
+  _echo "2 aliases added."
+}
+clean_up(){
+  _title "Clean up"
+  apt update && apt upgrade -y && apt autoremove -y && apt autoclean -y
+}
+#-----------------------#
+# MAIN FUNCTION / START #
+#-----------------------#
+main() {
+  while [ $# -gt 0 ]; do
+    case $1 in
+    (-h|--help) _usage;;
+    (-v|--version) _version;;
+    (-q) QTM=1;shift;;
+    (--) shift; break;;
+    (-*) _usage "$1: unknown option";;
+    (*) break;;
+    esac
+  done
+  _root
+  # start steps
+  full_update
+  remove_software
+  add_software_apm
+  add_software_amp
+  add_software_dlna
+  add_software_nextcloud
+  # => https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services
+  
+  # nextcloud
+  #   apt install php-zip php-mbstring
+  #   chown www-data:www-data /var/www/html
+  
+  
+  # certbot
+  configure_vm
+  create_aliases
+  clean_up
+}
+main "$@"
