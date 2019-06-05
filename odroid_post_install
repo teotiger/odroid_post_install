@@ -28,9 +28,7 @@ _config(){
   source "$1"
 }
 _echo(){
-  if [ $QTM -eq 0 ]; then
-    echo "$1"
-  fi
+  echo "$1"
 }
 _error(){
   echo "$1"
@@ -100,10 +98,6 @@ remove_software(){
 add_software_apm(){
   _title "Install Apache Webserver with PHP and MySQL Database"
   apt install rar unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
-  MYSUSER=`grep -m1 user /etc/mysql/debian.cnf | awk '{ print $3 }'`
-  MYSPASS=`grep -m1 password /etc/mysql/debian.cnf | awk '{ print $3 }'`
-  _echo "MySQL 'root' user is => "$MYSUSER
-  _echo "MySQL 'root' pass is => "$MYSPASS
 }
 add_software_amp(){
   _title "Install Ampache Music Streaming Server"
@@ -115,26 +109,36 @@ add_software_amp(){
   _echo "...increase max. upload filesize in php to 22MB"
   _replace "/etc/php/7.2/apache2/php.ini" "upload_max_filesize = 2M" "upload_max_filesize = 22M"
   _replace "/etc/php/7.2/apache2/php.ini" "post_max_size = 8M" "post_max_size = 22M"
-  _echo "Configure your Ampache via Web Gui => http://localhost/ampache"
 }
 add_software_dlna(){
   _title "Install DLNA Media Server"
-  apt install minidlna
-  _echo "Configure your media files in => /etc/minidlna.conf"
-  _echo "Start/Stop your DLNA server with => service minidlna start|stop"
-  _echo "Be careful with the image cache located in => /var/cache/minidlna/" 
+  apt install minidlna -y
 }
 add_software_nextcloud(){
   _title "Install Nextcloud"
-  apt install php-zip php-mbstring
+  apt install php-zip php-mbstring -y
   NEXTDIR=/var/www/html/nextcloud
   mkdir $NEXTDIR
   cd $NEXTDIR
   wget https://download.nextcloud.com/server/installer/setup-nextcloud.php
   sudo chown -R www-data:www-data $NEXTDIR
+}
+display_summary(){
+  _title "Installation summary"
+
+  # restart webserver for update changes
+  /etc/init.d/apache2 restart
+  
+  MYSUSER=`grep -m1 user /etc/mysql/debian.cnf | awk '{ print $3 }'`
+  MYSPASS=`grep -m1 password /etc/mysql/debian.cnf | awk '{ print $3 }'`
+  _echo "MySQL 'root' user is => "$MYSUSER
+  _echo "MySQL 'root' pass is => "$MYSPASS
+  _echo "Configure your Ampache via Web Gui => http://localhost/ampache"
+  _echo "Configure the DLNA media files in => /etc/minidlna.conf"
+  _echo "Start/Stop your DLNA server with => service minidlna start|stop"
+  _echo "Be careful with the DLNA image cache located in => /var/cache/minidlna/" 
   _echo "Configure your Nextcloud via Web Gui => http://localhost/nextcloud/setup-nextcloud.php"
 }
-
 # add_software4(){
 #   _title "Install Samba Server => READ https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services"
 #   apt install samba-common samba tdb-tools
@@ -157,7 +161,7 @@ configure_vm(){
   vbox=`dmidecode -t system | grep -i 'virtualbox' | wc -l`
   if [ $vbox -gt 0 ]; then
     _echo "Install software and..."
-    apt install virtualbox-guest-additions-iso virtualbox-guest-utils
+    apt install virtualbox-guest-additions-iso virtualbox-guest-utils -y
     _echo "...add user to group"
     if [ $SUDO_USER == "" ]; then
       adduser $USER vboxsf
@@ -202,6 +206,7 @@ main() {
   add_software_amp
   add_software_dlna
   add_software_nextcloud
+  display_summary
   # => https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services
   
   # nextcloud

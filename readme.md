@@ -10,7 +10,13 @@ With ODROID_POST_INSTALL you can install and configure on a fresh ODROID (tested
 It also update the whole system and remove unnecessary (mainly desktop) apps. See the script for further information.
 
 ## Installation
-Simply download the script and make it executable with `chmod u+x odroid_post_install`
+Simply download the script and make it executable.
+
+```bash
+wget https://raw.githubusercontent.com/teotiger/odroid_post_install/master/odroid_post_install
+chmod u+x odroid_post_install
+sudo ./odroid_post_install
+```
 
 ## License
 ODROID_POST_INSTALL is released under the [MIT license](https://github.com/teotiger/odroid_post_install/blob/master/license.txt).
