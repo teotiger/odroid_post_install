@@ -28,7 +28,9 @@ _config(){
   source "$1"
 }
 _echo(){
-  echo "$1"
+  if [ $QTM -eq 0 ]; then
+    echo "$1"
+  fi
 }
 _error(){
   echo "$1"
@@ -99,6 +101,15 @@ add_software_apm(){
   _title "Install Apache Webserver with PHP and MySQL Database"
   apt install rar unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
 }
+add_software_certbot(){
+  _title "Enable HTTPS in Apache"
+  apt update
+  apt install software-properties-common
+  add-apt-repository universe
+  add-apt-repository ppa:certbot/certbot
+  apt update
+  apt install certbot python-certbot-apache
+}
 add_software_amp(){
   _title "Install Ampache Music Streaming Server"
   cd /var/www/html
@@ -127,6 +138,7 @@ display_summary(){
   _title "Installation summary"
 
   # restart webserver for update changes
+  _echo "Restart webserver..."
   /etc/init.d/apache2 restart
   
   MYSUSER=`grep -m1 user /etc/mysql/debian.cnf | awk '{ print $3 }'`
@@ -138,6 +150,7 @@ display_summary(){
   _echo "Start/Stop your DLNA server with => service minidlna start|stop"
   _echo "Be careful with the DLNA image cache located in => /var/cache/minidlna/" 
   _echo "Configure your Nextcloud via Web Gui => http://localhost/nextcloud/setup-nextcloud.php"
+  _echo "Configure your HTTPS by reading => https://certbot.eff.org/lets-encrypt/ubuntubionic-apache"
 }
 # add_software4(){
 #   _title "Install Samba Server => READ https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services"
@@ -203,20 +216,13 @@ main() {
   full_update
   remove_software
   add_software_apm
+  add_software_certbot
   add_software_amp
   add_software_dlna
   add_software_nextcloud
-  display_summary
-  # => https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services
-  
-  # nextcloud
-  #   apt install php-zip php-mbstring
-  #   chown www-data:www-data /var/www/html
-  
-  
-  # certbot
-  configure_vm
+  # configure_vm
   create_aliases
   clean_up
+  display_summary
 }
 main "$@"
