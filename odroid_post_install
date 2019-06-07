@@ -104,11 +104,11 @@ add_software_apm(){
 add_software_certbot(){
   _title "Enable HTTPS in Apache"
   apt update
-  apt install software-properties-common
-  add-apt-repository universe
-  add-apt-repository ppa:certbot/certbot
+  apt install software-properties-common -y
+  add-apt-repository universe -y
+  add-apt-repository ppa:certbot/certbot -y
   apt update
-  apt install certbot python-certbot-apache
+  apt install certbot python-certbot-apache -y
 }
 add_software_amp(){
   _title "Install Ampache Music Streaming Server"
