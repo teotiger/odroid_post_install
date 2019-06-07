@@ -145,6 +145,7 @@ display_summary(){
   MYSPASS=`grep -m1 password /etc/mysql/debian.cnf | awk '{ print $3 }'`
   _echo "MySQL 'root' user is => "$MYSUSER
   _echo "MySQL 'root' pass is => "$MYSPASS
+  _echo "Register your certificate for HTTPS with => certbot --apache -d www.yourdomain.com -d yourdomain.de"
   _echo "Configure your Ampache via Web Gui => http://localhost/ampache"
   _echo "Configure the DLNA media files in => /etc/minidlna.conf"
   _echo "Start/Stop your DLNA server with => service minidlna start|stop"
@@ -152,22 +153,6 @@ display_summary(){
   _echo "Configure your Nextcloud via Web Gui => http://localhost/nextcloud/setup-nextcloud.php"
   _echo "Configure your HTTPS by reading => https://certbot.eff.org/lets-encrypt/ubuntubionic-apache"
 }
-# add_software4(){
-#   _title "Install Samba Server => READ https://wiki.odroid.com/odroid-xu4/software/ubuntu_nas/03_nas_services"
-#   apt install samba-common samba tdb-tools
-#   SMBUSER=foo
-#   SMBPASS=bar
-#   echo -ne "$SMBPASS\n$SMBPASS\n" | smbpasswd -a -s $SMBUSER
-#   _echo "Samba user foo created => use bar as pass"
-# 
-#   SMBSHAREDIR=/opt/odroidshare
-#   mkdir $USERSHAREDIR
-#   chmod 777 $USERSHAREDIR
-#   net usershare add OdroidShare $USERSHAREDIR "Shared Folder on Odroid N2" user:$SMBUSER
-# 
-#   _echo "Configure your folders => /etc/samba/smb.conf"
-#   _echo "Start/Stop your dlna server with => service smbd start|stop" 
-# }
 configure_vm(){
   _title "Configure virtual machine (if any)"
 
