@@ -99,7 +99,8 @@ remove_software(){
 }
 add_software_apm(){
   _title "Install Apache Webserver with PHP and MySQL Database"
-  apt install rar unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
+  # no rar package available!!!
+  apt install unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
 }
 add_software_certbot(){
   _title "Enable HTTPS in Apache"
@@ -120,6 +121,7 @@ add_software_amp(){
   _echo "...increase max. upload filesize in php to 22MB"
   _replace "/etc/php/7.2/apache2/php.ini" "upload_max_filesize = 2M" "upload_max_filesize = 22M"
   _replace "/etc/php/7.2/apache2/php.ini" "post_max_size = 8M" "post_max_size = 22M"
+  service apache2 restart
 }
 add_software_dlna(){
   _title "Install DLNA Media Server"
