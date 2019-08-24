@@ -100,7 +100,7 @@ remove_software(){
 add_software_apm(){
   _title "Install Apache Webserver with PHP and MySQL Database"
   # no rar package available!!!
-  apt install unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
+  apt install rsync unrar apache2 libapache2-mod-php7.2 php7.2 php7.2-mysql mysql-server php-curl php-gd php-xml -y
 }
 add_software_certbot(){
   _title "Enable HTTPS in Apache"
